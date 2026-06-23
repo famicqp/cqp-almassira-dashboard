@@ -1,35 +1,29 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-st.set_page_config(page_title="CQP المسيرة - النظام البيداغوجي", layout="wide")
-st.title("📊 نظام القيادة البيداغوجي المطور")
+# ... (الكود السابق لمعالجة البيانات مع تحويلات الأرقام) ...
 
-uploaded_file = st.sidebar.file_uploader("📥 ارفع ملف AvancementProgramme.csv", type=["csv"])
+def generate_strategic_analysis(df):
+    st.header("🔍 التحليل الاستراتيجي البيداغوجي")
+    
+    # حساب مؤشر الأداء البيداغوجي (Performance Index)
+    # هو حاصل ضرب نسبة الإنجاز في (1 - نسبة الغياب) لتقييم الجودة الحقيقية
+    df['Quality_Index'] = df['Taux Réalisation (P & SYN )'] * (1 - (df['Moy Absence'] / 100))
+    
+    # 1. تحليل الفجوات (Gap Analysis)
+    st.subheader("تحليل الفجوات (Gap Analysis)")
+    gap_df = df.groupby('filière').agg({'Écart': 'mean', 'Quality_Index': 'mean'})
+    st.dataframe(gap_df.style.background_gradient(cmap='RdYlGn'))
+    
+    # 2. تقييم كفاءة الأساتذة (Efficiency of Facilitation)
+    st.subheader("تقييم كفاءة التكوين (Facilitation Efficiency)")
+    fig = px.scatter(df, x='MH Réalisée Globale', y='Taux Réalisation (P & SYN )', 
+                     color='Formateur Affecté Présentiel Actif', 
+                     size='Moy Absence', hover_data=['Module'])
+    st.plotly_chart(fig, use_container_width=True)
 
+# استدعاء التحليل بعد تحميل البيانات
 if uploaded_file is not None:
-    # 1. قراءة وتنظيف أولي
-    df = pd.read_csv(uploaded_file)
-    df.columns = df.columns.str.strip()
-    
-    # 2. القائمة التقنية لفرض تحويل البيانات إلى أرقام
-    numeric_cols = ['MH Totale  DRIF', 'MH Réalisée Globale', 'Taux Réalisation (P & SYN )']
-    
-    for col in numeric_cols:
-        # تحويل النص لـ (numeric)، أي خلية بها نص أو خطأ تتحول لـ NaN
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace('%', '').str.replace(',', ''), errors='coerce')
-        # ملء القيم الفارغة (NaN) بـ 0 لضمان نجاح الحسابات
-        df[col] = df[col].fillna(0)
-
-    # الآن العمليات الحسابية ستعمل بدون أخطاء
-    st.header("1. التحليل الكمي")
-    group_summary = df.groupby('Groupe').agg({
-        'MH Totale  DRIF': 'sum',
-        'MH Réalisée Globale': 'sum',
-        'Taux Réalisation (P & SYN )': 'mean'
-    }).rename(columns={'Taux Réalisation (P & SYN )': 'Avancement Moyen (%)'})
-    
-    st.dataframe(group_summary.style.format("{:.1f}"))
-    
-    st.success("✅ تم تحليل البيانات بنجاح!")
-else:
-    st.info("💡 يرجى رفع ملف الـ CSV للبدء.")
+    # ... (خطوات التنظيف) ...
+    generate_strategic_analysis(df)
