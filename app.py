@@ -1,41 +1,33 @@
 import streamlit as st
 import pandas as pd
 
-# تحميل البيانات
+# 1. إعداد النظام
+st.set_page_config(page_title="CQP المسيرة - لوحة التقارير", layout="wide")
+st.title("📑 نظام التقارير البيداغوجية المتكامل")
+
+# 2. تحميل البيانات (اعتماد كلي على ملفك)
 @st.cache_data
-def get_data():
+def load_data():
     df = pd.read_csv("AvancementProgramme2025_ESY0_22_06_2026_12_04_43.xlsx - AvancementProgramme.csv")
     df.columns = df.columns.str.strip()
     return df
 
-df = get_data()
+df = load_data()
 
-st.title("📑 التقارير البيداغوجية الشاملة")
+# 3. تبويب التقارير
+tab1, tab2, tab3 = st.tabs(["🏢 تقرير الشعب", "👨‍🏫 تقرير المكونين", "🎓 تقرير المجموعات"])
 
-# 1. تقرير الشعب (Filières)
-st.subheader("🏢 تقرير الشعب (Filière Report)")
-filiere_report = df.groupby('filière').agg({
-    'MH Totale  DRIF': 'sum',
-    'MH Réalisée Globale': 'sum',
-    'Taux Réalisation (P & SYN )': 'mean'
-}).rename(columns={'Taux Réalisation (P & SYN )': 'Moyenne Avancement %'})
-st.dataframe(filiere_report.style.format("{:.1f}"))
+with tab1:
+    st.subheader("تحليل الشعب (Filières)")
+    filiere_rep = df.groupby('filière').agg({'MH Totale  DRIF': 'sum', 'MH Réalisée Globale': 'sum', 'Taux Réalisation (P & SYN )': 'mean'})
+    st.dataframe(filiere_rep.style.format("{:.1f}"))
 
-# 2. تقرير المكونين (Formateurs)
-st.subheader("👨‍🏫 تقرير الأداء المهني للمكونين")
-formateur_report = df.groupby('Formateur Affecté Présentiel Actif').agg({
-    'Module': 'count',
-    'MH Réalisée Globale': 'sum'
-}).rename(columns={'Module': 'Nombre de Modules', 'MH Réalisée Globale': 'Heures Totales'})
-st.dataframe(formateur_report.sort_values(by='Heures Totales', ascending=False))
+with tab2:
+    st.subheader("أداء المكونين (Formateurs)")
+    formateur_rep = df.groupby('Formateur Affecté Présentiel Actif').agg({'Module': 'count', 'MH Réalisée Globale': 'sum'})
+    st.dataframe(formateur_rep.sort_values(by='MH Réalisée Globale', ascending=False))
 
-# 3. تقرير المتدربين (حسب المجموعات - Groupes)
-st.subheader("🎓 تقرير المجموعات (Groupes/Stagiaires)")
-groupe_report = df.groupby('Groupe').agg({
-    'Effectif Groupe': 'first',
-    'Moy Absence': 'mean',
-    'Taux Réalisation (P & SYN )': 'mean'
-})
-st.dataframe(groupe_report)
-
-st.info("💡 هذه التقارير تلخص الأداء العام للمركز (CQP المسيرة).")
+with tab3:
+    st.subheader("تقرير المجموعات (Groupes)")
+    groupe_rep = df.groupby('Groupe').agg({'Effectif Groupe': 'first', 'Moy Absence': 'mean', 'Taux Réalisation (P & SYN )': 'mean'})
+    st.dataframe(groupe_rep.sort_values(by='Taux Réalisation (P & SYN )'))
